@@ -295,9 +295,11 @@ async def reset_password(
         )
 
     try:
-        user._hashed_password = hash_password(data.password)
-        await db.run_sync(lambda s: s.delete(token_record))
-        await db.commit()
+        user._hashed_password = hash_password(data.password)  # Спочатку змінюємо
+        db.add(user)  # Потім додаємо в сесію
+        await db.run_sync(lambda s: s.delete(token_record))  # Видаляємо токен
+        await db.commit()  # І лише потім коміт
+
     except SQLAlchemyError:
         await db.rollback()
         raise HTTPException(
